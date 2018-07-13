@@ -1,10 +1,10 @@
 {
   "name": "@tools/diff-package-jsons",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tool to diff package.json dependencies",
   "main": "dist/src/main.js",
   "bin": {
-    "flatten-json": "dist/src/main.js"
+    "diff-package-jsons": "dist/src/main.js"
   },
   "dependencies": {
     "@fluxgate/core": "^2.5.4-beta.0",
