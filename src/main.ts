@@ -15,7 +15,7 @@ import { getLogger, ILogger, levels, using, XLog } from '@fluxgate/platform';
 // -------------------------------------- logging --------------------------------------------
 
 
-import { FlattenJson, OptionParser, OptionType, Option, Types } from '@fluxgate/core';
+import { FlattenJson, OptionParser, OptionType, Option, Types, Utility, StringUtil } from '@fluxgate/core';
 import { JsonReader } from '@fluxgate/platform';
 
 
@@ -114,6 +114,7 @@ class DependencyEntry {
 
 class Main {
   static logger = getLogger('Main');
+  public static readonly LINE = '================================================================================';
 
   constructor(private filePaths: string[]) {
   }
@@ -172,7 +173,7 @@ class Main {
 
   private dumpDifference(packge: string, entry: DependencyEntry) {
     console.log();
-    console.log(`package ${packge}`);
+    console.log(`================ package ${packge}`);
 
     entry.getVersions().forEach(version => {
       console.log(`  version ${version}: `);
