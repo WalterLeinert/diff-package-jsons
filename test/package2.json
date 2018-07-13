@@ -1,0 +1,39 @@
+{
+  "name": "@tools/diff-package-jsons",
+  "version": "1.0.0",
+  "description": "Tool to diff package.json dependencies",
+  "main": "dist/src/main.js",
+  "bin": {
+    "flatten-json": "dist/src/main.js"
+  },
+  "dependencies": {
+    "@fluxgate/core": "^2.5.4-beta.1",
+    "@fluxgate/platform": "^2.5.4-beta.0",
+    "log4js": "^1.1.1",
+    "rxjs": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.31",
+    "child_process": "^1.0.2",
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-env": "^0.4.0",
+    "gulp-sequence": "^0.4.6",
+    "gulp-sourcemaps": "^2.6.0",
+    "gulp-tslint": "^8.1.1",
+    "gulp-typescript": "^3.1.7",
+    "merge2": "^1.0.3",
+    "tslint": "^5.4.3",
+    "typescript": "2.3.3",
+    "yargs": "^8.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://server.fluxgate.de:90/tools/flatten-json.git"
+  },
+  "author": "Walter Leinert <walter.leinert@outlook.com>",
+  "license": "ISC"
+}

@@ -10,20 +10,12 @@
             "name": "Programm starten",
             "program": "${workspaceRoot}/dist/src/main.js",
             "args": [
-                "--help"
+                "test/package1.json", "test/package2.json"
             ],
             "cwd": "${workspaceRoot}",
             "outFiles": [
                "${workspaceRoot}/dist/src/*.js"
             ],
-            "sourceMaps": true
-        },
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "An den Prozess anfügen",
-            "port": 5858,
-            "outFiles": [],
             "sourceMaps": true
         }
     ]
