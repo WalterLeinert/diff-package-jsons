@@ -8,11 +8,11 @@ const packageJson = require('../package.json');
 
 // -------------------------------------- logging --------------------------------------------
 // tslint:disable-next-line:no-unused-variable
-import { getLogger, ILogger, levels, using, XLog } from '@fluxgate/platform';
+import { getLogger, levels, using, XLog } from '@fluxgate/platform';
 // -------------------------------------- logging --------------------------------------------
 
 
-import { FlattenJson, OptionParser, OptionType, Option, Types, Utility, StringUtil, EnumHelper } from '@fluxgate/core';
+import { FlattenJson, OptionParser, OptionType, Option, EnumHelper, BidirectionalMap, StringBuilder } from '@fluxgate/core';
 import { JsonReader } from '@fluxgate/platform';
 
 
@@ -71,6 +71,10 @@ enum DependencyType {
   Peer
 }
 
+
+/**
+ * 2-tupel with dependency type and package file path.
+ */
 class DependencyInfo {
 
   constructor(private _dependencyType: DependencyType,
@@ -87,6 +91,9 @@ class DependencyInfo {
 }
 
 
+/**
+ * Models all versions of a certain package
+ */
 class DependencyEntry {
   private _versionInfos: Map<string, DependencyInfo[]>;
 
@@ -119,21 +126,42 @@ class DependencyEntry {
 class Main {
   static logger = getLogger('Main');
   public static readonly LINE = '================================================================================';
-  private static readonly dependencyTypeMapper = EnumHelper.getBidirectionalMap(DependencyType);
+  public static readonly dependencyTypeMapper = EnumHelper.getBidirectionalMap(DependencyType);
+  private static dependencyTypeMap = new BidirectionalMap<string, DependencyType>(
+    [
+      'dependencies',
+      'devDependencies',
+      'peerDependencies'
+    ], [
+      DependencyType.Normal,
+      DependencyType.Dev,
+      DependencyType.Peer
+    ]);
 
-  constructor(private filePaths: string[]) {
+  constructor(private filePaths: string[], private types: DependencyType[]) {
   }
 
 
   public run() {
     using(new XLog(Main.logger, levels.INFO, 'run'), (log) => {
-      const dependencyTypeMap = new Map<string, DependencyType>();
-      dependencyTypeMap.set('dependencies', DependencyType.Normal);
-      dependencyTypeMap.set('devDependencies', DependencyType.Dev);
-      dependencyTypeMap.set('peerDependencies', DependencyType.Peer);
-
-      const dependencyTypeMapper = EnumHelper.getBidirectionalMap(DependencyType);
       const dependencyMap: Map<string, DependencyEntry> = new Map<string, DependencyEntry>();
+
+      const typeKeys = [];
+      this.types.forEach(
+        t => typeKeys.push(Main.dependencyTypeMap.map2To1(t as DependencyType))
+      );
+
+      const typeKeysString = new StringBuilder();
+      let first = true;
+      typeKeys.forEach(t => {
+        if (!first) {
+          typeKeysString.append(', ');
+        }
+        typeKeysString.append(t);
+
+        first = false;
+      });
+
 
       this.filePaths.forEach((filePath) => {
         const json = JsonReader.readJsonSync(filePath);
@@ -142,8 +170,6 @@ class Main {
         const flattener = new FlattenJson(json);
         flattener.flatten();
 
-        const typeKeys = Array.from(dependencyTypeMap.keys());
-
         const packges = flattener.result.keys.filter(
           k => this.isDependency(k, typeKeys)
         );
@@ -151,7 +177,7 @@ class Main {
 
         packges.forEach(packge => {
           const parts = packge.split('.');
-          const dependencyType = dependencyTypeMap.get(parts[0]);
+          const dependencyType = Main.dependencyTypeMap.map1To2(parts[0]);
           const packgeName = parts[1];
 
           const version = flattener.result.get(packge);
@@ -169,8 +195,15 @@ class Main {
 
       });
 
+
+      console.log();
+      console.log(`----------------------------------------------------------------------`);
+      console.log(`package differences for ${typeKeysString}`);
+      console.log(`----------------------------------------------------------------------`);
+      console.log();
+
       let differencesFound = false;
-      dependencyMap.forEach((v, k, map) => {
+      dependencyMap.forEach((v, k) => {
         const versions = v.getVersions();
 
         if (versions.length > 1) {
@@ -197,7 +230,6 @@ class Main {
 
 
   private dumpDifference(packge: string, entry: DependencyEntry) {
-    console.log();
     console.log(`================ package ${packge}`);
 
     entry.getVersions().forEach(version => {
@@ -206,8 +238,6 @@ class Main {
       const infos = entry.getInfos(version);
 
       infos.forEach(info => {
-        const dependencyType = Main.dependencyTypeMapper.map2To1(info.type);
-
         let type = '';
         if (info.type !== DependencyType.Normal) {
           type = ` (${Main.dependencyTypeMapper.map2To1(info.type)})`;
@@ -215,13 +245,17 @@ class Main {
 
         console.log(`    ${info.packageFile}${type}: `);
       });
-
     });
+
+    console.log();
   }
 }
 
 try {
-  let main = new Main(opts._args);
+  let main = new Main(opts._args, [DependencyType.Normal, DependencyType.Dev]);
+  main.run();
+
+  main = new Main(opts._args, [DependencyType.Peer]);
   main.run();
 } catch (err) {
   logger.error(err);
