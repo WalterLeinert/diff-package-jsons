@@ -2,10 +2,7 @@
 
 
 // Nodejs imports
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import * as util from 'util';
+import 'reflect-metadata';
 
 const packageJson = require('../package.json');
 
@@ -15,7 +12,7 @@ import { getLogger, ILogger, levels, using, XLog } from '@fluxgate/platform';
 // -------------------------------------- logging --------------------------------------------
 
 
-import { FlattenJson, OptionParser, OptionType, Option, Types, Utility, StringUtil } from '@fluxgate/core';
+import { FlattenJson, OptionParser, OptionType, Option, Types, Utility, StringUtil, EnumHelper } from '@fluxgate/core';
 import { JsonReader } from '@fluxgate/platform';
 
 
@@ -67,14 +64,21 @@ function usage(message?: string) {
 // -------------------------- option parsing ------------------------
 //
 
+
+enum DependencyType {
+  Normal,
+  Dev,
+  Peer
+}
+
 class DependencyInfo {
 
-  constructor(private _isDev: boolean,
+  constructor(private _dependencyType: DependencyType,
     private _packageFile: string) {
   }
 
-  public get isDev(): boolean {
-    return this._isDev;
+  public get type(): DependencyType {
+    return this._dependencyType;
   }
 
   public get packageFile(): string {
@@ -115,6 +119,7 @@ class DependencyEntry {
 class Main {
   static logger = getLogger('Main');
   public static readonly LINE = '================================================================================';
+  private static readonly dependencyTypeMapper = EnumHelper.getBidirectionalMap(DependencyType);
 
   constructor(private filePaths: string[]) {
   }
@@ -122,7 +127,12 @@ class Main {
 
   public run() {
     using(new XLog(Main.logger, levels.INFO, 'run'), (log) => {
+      const dependencyTypeMap = new Map<string, DependencyType>();
+      dependencyTypeMap.set('dependencies', DependencyType.Normal);
+      dependencyTypeMap.set('devDependencies', DependencyType.Dev);
+      dependencyTypeMap.set('peerDependencies', DependencyType.Peer);
 
+      const dependencyTypeMapper = EnumHelper.getBidirectionalMap(DependencyType);
       const dependencyMap: Map<string, DependencyEntry> = new Map<string, DependencyEntry>();
 
       this.filePaths.forEach((filePath) => {
@@ -132,12 +142,16 @@ class Main {
         const flattener = new FlattenJson(json);
         flattener.flatten();
 
-        const packges = flattener.result.keys.filter(k => k.startsWith('dependencies.') || k.startsWith('devDependencies.'));
+        const typeKeys = Array.from(dependencyTypeMap.keys());
+
+        const packges = flattener.result.keys.filter(
+          k => this.isDependency(k, typeKeys)
+        );
 
 
         packges.forEach(packge => {
           const parts = packge.split('.');
-          const isDevDependencies = parts[0] === 'devDependencies';
+          const dependencyType = dependencyTypeMap.get(parts[0]);
           const packgeName = parts[1];
 
           const version = flattener.result.get(packge);
@@ -150,7 +164,7 @@ class Main {
             entry = dependencyMap.get(packgeName);
           }
 
-          entry.addInfo(version, new DependencyInfo(isDevDependencies, filePath));
+          entry.addInfo(version, new DependencyInfo(dependencyType, filePath));
         });
 
       });
@@ -171,6 +185,17 @@ class Main {
     });
   }
 
+
+  private isDependency(key: string, depKeys: string[]): boolean {
+    for (let i = 0; i < depKeys.length; i++) {
+      if (key.startsWith(depKeys[i] + '.')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
   private dumpDifference(packge: string, entry: DependencyEntry) {
     console.log();
     console.log(`================ package ${packge}`);
@@ -179,8 +204,16 @@ class Main {
       console.log(`  version ${version}: `);
 
       const infos = entry.getInfos(version);
+
       infos.forEach(info => {
-        console.log(`    ${info.packageFile}${info.isDev ? ' (dev)' : ''}: `);
+        const dependencyType = Main.dependencyTypeMapper.map2To1(info.type);
+
+        let type = '';
+        if (info.type !== DependencyType.Normal) {
+          type = ` (${Main.dependencyTypeMapper.map2To1(info.type)})`;
+        }
+
+        console.log(`    ${info.packageFile}${type}: `);
       });
 
     });

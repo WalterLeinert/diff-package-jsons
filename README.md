@@ -13,10 +13,9 @@ npm install -g @tools/diff-package-jsons
 Tool zum Finden von unterschiedlichen Versionen bei den package.json Abhängigkeiten 
 
 ```bash
-usage: diff-package-jsons [OPTIONS]
+usage: diff-package-jsons [OPTIONS] <package-json1> <package-json2> ... <package-jsonN>
 options:
     -v, --verbose            More verbose output.
-    -f ARG, --file=ARG       Json-Datei.
     -h, --help               Show help.
 ```
 

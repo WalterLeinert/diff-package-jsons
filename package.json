@@ -1,6 +1,6 @@
 {
   "name": "@tools/diff-package-jsons",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Tool to diff package.json dependencies",
   "main": "dist/src/main.js",
   "bin": {
