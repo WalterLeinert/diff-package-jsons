@@ -1,6 +1,6 @@
 {
   "name": "@tools/diff-package-jsons",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "Tool to diff package.json dependencies",
   "main": "dist/src/main.js",
   "bin": {
@@ -10,7 +10,9 @@
     "@fluxgate/core": "^2.6.0-beta.0",
     "@fluxgate/platform": "^2.6.0-beta.0",
     "log4js": "^1.1.1",
-    "rxjs": "^5.4.1"
+    "reflect-metadata": "^0.1.12",
+    "rxjs": "^5.4.1",
+    "tslib": "^1.9.3"
   },
   "devDependencies": {
     "@types/node": "^7.0.31",
